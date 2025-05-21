@@ -1,0 +1,14 @@
+
+=== ml_chat.txt ===
+Summary:
+- The conversation had 12 messages (6 from User, 6 from AI).
+- The user asked mainly about learning and machine.
+- Most common keywords: learning, machine, explain, hello, information.
+
+
+=== python_chat.txt ===
+Summary:
+- The conversation had 10 messages (5 from User, 5 from AI).
+- The user asked mainly about python and popular.
+- Most common keywords: python, popular, tell, makes, information.
+
