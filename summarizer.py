@@ -83,6 +83,43 @@ class ChatLogSummarizer:
         word_counts = Counter(filtered_words)
         return [word for word, _ in word_counts.most_common(top_n)]
     
+    def extract_keywords_tfidf(self, top_n=5):
+        user_text = ' '.join(self.user_messages).lower()
+        ai_text = ' '.join(self.ai_messages).lower()
+        
+        # remove punctuation
+        user_text = user_text.translate(str.maketrans(", ", string.punctuation ))
+        ai_text = ai_text.translate(str.maketrans(", ", string.punctuation ))
+        
+        # tokenize
+        user_words = user_text.split()
+        ai_words = ai_text.split()
+        
+         # Remove stop words and short words
+        user_words = [word for word in user_words if word not in self.stop_words and len(word) > 2]
+        ai_words = [word for word in ai_words if word not in self.stop_words and len(word) > 2]
+        
+        
+        user_word_counts = Counter(user_words)
+        ai_word_counts = Counter(ai_words)
+        
+        # Get all unique words
+        all_words = set(user_word_counts.key()) | set(ai_word_counts.key()) 
+        tfidf_scores = {}
+        n_docs = 2
+        
+        for word in all_words:
+            tf_user = user_word_counts.get(word, 0) / max(len(user_words), 1)
+            tf_ai = ai_word_counts.get(word, 0) / max(len(ai_words), 1)
+            
+            df = (1 if word in user_word_counts else 0) + (1 if word in ai_word_counts else 0 )
+            idf  = 1 + (n_docs / df > 0 else 0)
+            tfidf_scores[word] = ((tf_user + tf_ai) / 2) * idf 
+            
+        sorted_words = sorted(tfidf_scores.items(), key=lambda x: x[1], reverse=True)
+        return [word for word, _ in sorted_words[:top_n]]
+
+        
     
         
         
