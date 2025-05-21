@@ -3,11 +3,8 @@ import os
 import argparse
 import string
 from collections import Counter
-
 class ChatLogSummarizer:
-
     def __init__(self):
-        
         self.user_messages = []
         self.ai_messages = []
         self.all_messages = []
@@ -71,12 +68,12 @@ class ChatLogSummarizer:
            'total_messages': len(self.user_messages) + len(self.ai_messages),
            'user_messages': len(self.user_messages),
            'ai_messages': len(self.ai_messages),
-           'exchange': min(len(self.user_messages), len(self.ai_messages))
+           'exchanges': min(len(self.user_messages), len(self.ai_messages))
            
        }
     
     def extract_keywords_simple(self, top_n=5):
-        text = ' '.join(self.lower_messages).lower()
+        text = ' '.join(self.all_messages).lower()
         text = text.translate(str.maketrans(", ", string.punctuation))
         words = text.split()
         filtered_words = [word for word in words if word not in self.stop_words and len(word) > 2]
@@ -88,8 +85,9 @@ class ChatLogSummarizer:
         ai_text = ' '.join(self.ai_messages).lower()
         
         # remove punctuation
-        user_text = user_text.translate(str.maketrans(", ", string.punctuation ))
-        ai_text = ai_text.translate(str.maketrans(", ", string.punctuation ))
+        user_text = user_text.translate(str.maketrans('', '', string.punctuation))
+        ai_text = ai_text.translate(str.maketrans('', '', string.punctuation))
+
         
         # tokenize
         user_words = user_text.split()
@@ -104,7 +102,7 @@ class ChatLogSummarizer:
         ai_word_counts = Counter(ai_words)
         
         # Get all unique words
-        all_words = set(user_word_counts.key()) | set(ai_word_counts.key()) 
+        all_words = set(user_word_counts.keys()) | set(ai_word_counts.keys()) 
         tfidf_scores = {}
         n_docs = 2
         
@@ -120,28 +118,82 @@ class ChatLogSummarizer:
         return [word for word, _ in sorted_words[:top_n]]
 
         
-    
-        
-        
-   
-   
-   
-   
-   
-   
-if __name__ == "__main__":
+    def generate_summary(self, use_tfidf=True):
+        stats = self.get_message_stats()
+
+        if use_tfidf:
+            keywords = self.extract_keywords_tfidf()
+        else:
+            keywords = self.extract_keywords_simple()
+        nature = self._determine_conversation_nature(keywords)
+
+        summary = "Summary:\n"
+        summary += f"- The conversation had {stats['total_messages']} messages "
+        summary += f"({stats['user_messages']} from User, {stats['ai_messages']} from AI).\n"
+        summary += f"- The user asked mainly about {nature}.\n"
+        summary += f"- Most common keywords: {', '.join(keywords)}.\n"
+
+        return summary
+
+    def _determine_conversation_nature(self, keywords):
+        return " and ".join(keywords[:2])
+
+    def process_directory(self, directory_path, use_tfidf=True):
+        results = {}
+
+        for filename in os.listdir(directory_path):
+            if filename.endswith('.txt'):
+                file_path = os.path.join(directory_path, filename)
+
+                
+                self.__init__()
+
+                
+                if self.parse_chat_log(file_path):
+                   
+                    summary = self.generate_summary(use_tfidf)
+                    results[filename] = summary
+
+        return results
+
+
+def main():
+    parser = argparse.ArgumentParser(description='AI Chat Log Summarizer')
+    parser.add_argument('input', help='Path to chat log file or directory')
+    parser.add_argument('--simple', action='store_true',
+                        help='Use simple frequency-based keyword extraction instead of TF-IDF')
+    parser.add_argument('--output', help='Output file to save the summary')
+
+    args = parser.parse_args()
     summarizer = ChatLogSummarizer()
-    if summarizer.parse_chat_log("chat_logs/python_chat.txt"):
-        print("Chat log parsed successfully!")
-        print(f"User messages: {len(summarizer.user_messages)}")
-        print(f"AI messages: {len(summarizer.ai_messages)}")
 
-        print("\nFirst few User messages:")
-        for msg in summarizer.user_messages[:2]:
-            print("-", msg)
+    if os.path.isdir(args.input):
+        results = summarizer.process_directory(args.input, not args.simple)
+        output_text = ""
+        for filename, summary in results.items():
+            output_text += f"\n=== {filename} ===\n{summary}\n"
 
-        print("\nFirst few AI messages:")
-        for msg in summarizer.ai_messages[:2]:
-            print("-", msg)
+        if args.output:
+            with open(args.output, 'w', encoding='utf-8') as f:
+                f.write(output_text)
+        else:
+            print(output_text)
     else:
-        print("Failed to parse chat log.")
+        if summarizer.parse_chat_log(args.input):
+            summary = summarizer.generate_summary(not args.simple)
+
+            if args.output:
+                with open(args.output, 'w', encoding='utf-8') as f:
+                    f.write(summary)
+            else:
+                print(summary)
+
+
+if __name__ == "__main__":
+    main()
+        
+        
+   
+   
+   
+   
