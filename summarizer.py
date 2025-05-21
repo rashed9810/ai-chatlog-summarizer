@@ -113,7 +113,7 @@ class ChatLogSummarizer:
             tf_ai = ai_word_counts.get(word, 0) / max(len(ai_words), 1)
             
             df = (1 if word in user_word_counts else 0) + (1 if word in ai_word_counts else 0 )
-            idf  = 1 + (n_docs / df > 0 else 0)
+            idf = 1 + (n_docs / df if df > 0 else 0)
             tfidf_scores[word] = ((tf_user + tf_ai) / 2) * idf 
             
         sorted_words = sorted(tfidf_scores.items(), key=lambda x: x[1], reverse=True)
