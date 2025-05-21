@@ -66,6 +66,32 @@ class ChatLogSummarizer:
             self.ai_messages.append(message)
         self.all_messages.append(message)
    
+    def get_message_stats(self):
+       return {
+           'total_messages': len(self.user_messages) + len(self.ai_messages),
+           'user_messages': len(self.user_messages),
+           'ai_messages': len(self.ai_messages),
+           'exchange': min(len(self.user_messages), len(self.ai_messages))
+           
+       }
+    
+    def extract_keywords_simple(self, top_n=5):
+        text = ' '.join(self.lower_messages).lower()
+        text = text.translate(str.maketrans(", ", string.punctuation))
+        words = text.split()
+        filtered_words = [word for word in words if word not in self.stop_words and len(word) > 2]
+        word_counts = Counter(filtered_words)
+        return [word for word, _ in word_counts.most_common(top_n)]
+    
+    
+        
+        
+   
+   
+   
+   
+   
+   
 if __name__ == "__main__":
     summarizer = ChatLogSummarizer()
     if summarizer.parse_chat_log("chat_logs/python_chat.txt"):
